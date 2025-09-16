@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Group {
+  chatId       String        @id
+  chatName     String?       // Cached group name from Telegram
+  ownerTgId    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  policy       Policy?
+  members      Member[]
+  invites      Invite[]
+  joinRequests JoinRequest[]
+  logs         Log[]
+}
+
+model Policy {
+  id                 String  @id @default(cuid())
+  chatId             String  @unique
+  type               String  // "basic" | "token"
+  asset              String? // for token policy
+  minAmount          String? // normalized string like "0.50"
+  includeUnconfirmed Boolean @default(false)
+  recheckEvery       String  @default("24h") // cron cadence
+  onFail             String  @default("soft_kick") // "restrict" | "soft_kick"
+  group              Group   @relation(fields: [chatId], references: [chatId])
+}
+
+model Attestation {
+  id         String    @id @default(cuid())
+  chatId     String
+  tgId       String
+  address    String
+  chain      String    // "btc"
+  verifiedAt DateTime  @default(now())
+  expiresAt  DateTime?
+
+  @@index([chatId, tgId])
+}
+
+model Member {
+  id         String    @id @default(cuid())
+  chatId     String
+  tgId       String
+  tgUsername String?   // Cached username from Telegram
+  tgName     String?   // Cached first name from Telegram
+  address    String
+  state      String    @default("verified") // "pending"|"verified"|"restricted"|"kicked"
+  lastCheck  DateTime?
+  policyHash String?   // Hash of the policy this member was verified against
+
+  group Group @relation(fields: [chatId], references: [chatId])
+
+  @@unique([chatId, tgId])
+}
+
+model Invite {
+  id        String   @id @default(cuid())
+  chatId    String
+  link      String
+  policyId  String?
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [chatId], references: [chatId])
+}
+
+model JoinRequest {
+  id           String   @id @default(cuid())
+  chatId       String
+  tgId         String
+  status       String   @default("pending") // pending|approved|declined|expired
+  requestedAt  DateTime @default(now())
+  expiresAt    DateTime
+  processedAt  DateTime?
+
+  group Group @relation(fields: [chatId], references: [chatId])
+
+  @@unique([chatId, tgId])
+  @@index([expiresAt, status])
+}
+
+model Log {
+  id        String   @id @default(cuid())
+  chatId    String
+  tgId      String?
+  level     String   // info|warn|error
+  event     String   // joined|approved|declined|restricted|soft_kicked|reverified
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [chatId], references: [chatId])
+}

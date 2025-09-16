@@ -1,0 +1,21 @@
+{
+  "buildCommand": "prisma generate && npm run build",
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/recheck",
+      "schedule": "0 */6 * * *"
+    }
+  ],
+  "functions": {
+    "src/app/api/tg/webhook/route.ts": {
+      "maxDuration": 10
+    },
+    "src/app/api/verify/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/recheck/route.ts": {
+      "maxDuration": 300
+    }
+  }
+}
