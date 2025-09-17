@@ -39,9 +39,15 @@ function VerifyContent() {
   const tgId = searchParams.get('tg_id') || '';
   const chatId = searchParams.get('chat_id') || '';
   const policyId = searchParams.get('policy_id') || undefined;
+  const verified = searchParams.get('verified') === 'true';
 
   useEffect(() => {
     setInTgWebView(/Telegram/i.test(navigator.userAgent));
+
+    // Check if already verified from Rare Pepe Wallet callback
+    if (verified) {
+      setVerifyStatus('success');
+    }
 
     // Fetch group info
     if (chatId) {
@@ -62,7 +68,7 @@ function VerifyContent() {
       // Default title when no group
       document.title = 'Verify Address';
     }
-  }, [chatId]);
+  }, [chatId, verified]);
 
   if (!tgId || !chatId) {
     return (
