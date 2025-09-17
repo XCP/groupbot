@@ -150,6 +150,24 @@ export function ManualVerification({
           </a>
         </div>
 
+        {/* Rare Pepe Wallet Button - styled similarly */}
+        <div className="flex justify-center">
+          <a
+            href={`https://rarepepewallet.wtf/connect?apiUrl=${encodeURIComponent(`${window.location.origin}/api/rarepepewallet/auth`)}&siteUrl=${encodeURIComponent(`${window.location.origin}/verify/rarepepewallet-callback?tg_id=${tgId}&chat_id=${chatId}${policyId ? `&policy_id=${policyId}` : ''}`)}`}
+            className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-xl hover:bg-purple-700 transition-all shadow-lg"
+            onClick={() => {
+              if (process.env.NEXT_PUBLIC_FATHOM_ID) {
+                trackEvent('rarepepewallet_sign_click');
+              }
+            }}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Connect with Rare Pepe Wallet
+          </a>
+        </div>
+
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300"></div>
