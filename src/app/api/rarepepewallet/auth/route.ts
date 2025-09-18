@@ -19,9 +19,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate a unique message for this address to sign
-    // This matches the format expected by the verify endpoint
-    const message = `Verify Rare Pepe Wallet: ${address} | ${Date.now()}`;
+    // Get tg_id and chat_id from URL query parameters
+    const { searchParams } = new URL(request.url);
+    const tg_id = searchParams.get('tg_id');
+    const chat_id = searchParams.get('chat_id');
+
+    if (!tg_id || !chat_id) {
+      return NextResponse.json(
+        { error: 'tg_id and chat_id are required in query parameters' },
+        {
+          status: 400,
+          headers: {
+            'Access-Control-Allow-Origin': 'https://rarepepewallet.wtf',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+          },
+        }
+      );
+    }
+
+    // This matches what the callback expects to verify
+    const message = `Verify: telegram.xcp.io | User: ${tg_id} | Chat: ${chat_id}`;
 
     return NextResponse.json(
       { message },

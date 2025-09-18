@@ -153,7 +153,7 @@ export function ManualVerification({
         {/* Rare Pepe Wallet Button - styled similarly */}
         <div className="flex justify-center">
           <a
-            href={`https://rarepepewallet.wtf/connect?apiUrl=${encodeURIComponent(`${window.location.origin}/api/rarepepewallet/auth`)}&siteUrl=${encodeURIComponent(`${window.location.origin}/verify/rarepepewallet-callback?tg_id=${tgId}&chat_id=${chatId}${policyId ? `&policy_id=${policyId}` : ''}`)}`}
+            href={`https://rarepepewallet.wtf/connect?apiUrl=${encodeURIComponent(`${window.location.origin}/api/rarepepewallet/auth?tg_id=${tgId}&chat_id=${chatId}`)}&siteUrl=${encodeURIComponent(`${window.location.origin}/verify/rarepepewallet-callback?tg_id=${tgId}&chat_id=${chatId}${policyId ? `&policy_id=${policyId}` : ''}`)}`}
             className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-purple-600 text-white text-lg font-semibold rounded-xl hover:bg-purple-700 transition-all shadow-lg"
             onClick={() => {
               if (process.env.NEXT_PUBLIC_FATHOM_ID) {

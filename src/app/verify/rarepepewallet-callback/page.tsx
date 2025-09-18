@@ -34,8 +34,8 @@ function RarePepeWalletCallbackContent() {
           trackEvent('rarepepewallet_verify_attempt');
         }
 
-        // Construct the expected message format for verification
-        const verifyMessage = `Verify: telegram.xcp.io | User: ${tgId} | Chat: ${chatId}`;
+        // Use the msg parameter from RarePepeWallet which contains the exact message that was signed
+        // This is the message we sent them from our auth endpoint
 
         // Call the verify endpoint
         const response = await fetch('/api/verify', {
@@ -46,7 +46,7 @@ function RarePepeWalletCallbackContent() {
             chat_id: chatId,
             policy_id: policyId,
             address,
-            message: verifyMessage,
+            message: msg,  // Use the actual signed message from URL params
             signature: sig,
             manual: true,
             rarepepewallet: true
