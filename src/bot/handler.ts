@@ -24,8 +24,8 @@ export function createBotHandler() {
     }));
     botInstance.use(conversations());
 
-    // Register the verify conversation
-    botInstance.use(createConversation(verifyConversation));
+    // Register the verify conversation with a name
+    botInstance.use(createConversation(verifyConversation, 'verifyConversation'));
 
     setupHandlers(botInstance);
   }
