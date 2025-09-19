@@ -9,13 +9,12 @@
  */
 
 import { VerificationResult } from '../types';
-import { getAddressType } from '../utils';
+import { verifyMessageWithMethod } from '../../signature';
 
 /**
  * Verify a BIP-322 signature according to the specification
  *
- * For groupbot: Uses existing signature.ts functions for now
- * TODO: Implement pure BIP-322 spec here to remove external dependencies
+ * For groupbot: Uses existing signature.ts functions which have full BIP-322 support
  */
 export async function verifyBIP322(
   message: string,
@@ -23,14 +22,20 @@ export async function verifyBIP322(
   address: string
 ): Promise<VerificationResult> {
   try {
-    // For now, return false since we need to implement pure BIP-322
-    // In the full implementation, this would handle:
-    // 1. Simple BIP-322 (Taproot)
-    // 2. Full BIP-322 (Legacy/SegWit with witness transactions)
+    // Use the existing BIP-322 implementation from signature.ts
+    const result = await verifyMessageWithMethod(message, signature, address);
+
+    if (result.valid && result.method?.includes('BIP-322')) {
+      return {
+        valid: true,
+        method: result.method,
+        details: `Verified using ${result.method}`
+      };
+    }
 
     return {
       valid: false,
-      details: 'BIP-322 spec implementation not yet ported to groupbot'
+      details: 'Not a valid BIP-322 signature'
     };
   } catch (error) {
     return {
