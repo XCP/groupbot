@@ -17,6 +17,7 @@
     "webhook:setup": "node scripts/setup-webhook.js"
   },
   "dependencies": {
+    "@grammyjs/conversations": "^2.1.0",
     "@headlessui/react": "^2.2.8",
     "@heroicons/react": "^2.2.0",
     "@noble/hashes": "^2.0.0",

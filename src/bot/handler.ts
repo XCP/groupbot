@@ -1,19 +1,33 @@
-import { Bot } from 'grammy';
+import { Bot, session } from 'grammy';
+import { conversations, createConversation } from '@grammyjs/conversations';
 import { sendDM } from '@/src/lib/telegram';
 import { getPolicyForChat } from '@/src/lib/policy';
 import { log } from '@/src/lib/logger';
+import { verifyConversation, type MyContext } from './verifyConversation';
 
-let botInstance: Bot | null = null;
+let botInstance: Bot<MyContext> | null = null;
 
 export function createBotHandler() {
   if (!botInstance) {
-    botInstance = new Bot(process.env.TELEGRAM_BOT_TOKEN!);
+    botInstance = new Bot<MyContext>(process.env.TELEGRAM_BOT_TOKEN!);
+
+    // Set up session and conversations middleware
+    botInstance.use(session({
+      initial() {
+        return {};
+      },
+    }));
+    botInstance.use(conversations());
+
+    // Register the verify conversation
+    botInstance.use(createConversation(verifyConversation));
+
     setupHandlers(botInstance);
   }
   return botInstance;
 }
 
-function setupHandlers(bot: Bot) {
+function setupHandlers(bot: Bot<MyContext>) {
 
   // Handle /start command
   bot.command('start', async (ctx) => {
@@ -23,18 +37,30 @@ I help token-gate Telegram groups with Counterparty assets.
 
 **Setup Requirements:**
 • Add me to your group as admin
-• Create invite link with "Approval Required" 
+• Create invite link with "Approval Required"
 • Configure policy with /setpolicy
 • ⚠️ Forums/Topics NOT supported
 
 **Commands:**
 /setpolicy - Configure group requirements
 /settings - View current settings
+/verify - Complete group verification inline
 /help - Show detailed help
 
 **Need help?** Visit https://telegram.xcp.io/faq`;
 
     await ctx.reply(message, { parse_mode: 'Markdown' });
+  });
+
+  // Handle /verify command - start the conversation
+  bot.command('verify', async (ctx) => {
+    // Only works in private chats
+    if (ctx.chat?.type !== 'private') {
+      await ctx.reply('This command can only be used in private messages with the bot.');
+      return;
+    }
+
+    await ctx.conversation.enter('verifyConversation');
   });
 
   // Test command for admins to simulate join request
@@ -85,7 +111,11 @@ I help token-gate Telegram groups with Counterparty assets.
 
 ${verifyMessage}
 
-👉 [Click here to verify](${url.toString()})`;
+**Option 1:** 🌐 Web Verification
+👉 [Click here to verify](${url.toString()})
+
+**Option 2:** 📱 Verify in Telegram
+Type /verify to complete verification right here`;
 
       // Send test DM to the admin
       await sendDM(tgId, message);
@@ -98,9 +128,17 @@ ${verifyMessage}
 
   // Handle /help command
   bot.command('help', async (ctx) => {
-    const message = `📚 **XCP Group Bot Help**
+    const isPrivate = ctx.chat?.type === 'private';
 
-**🛠 Group Admin Commands:**
+    let message = `📚 **XCP Group Bot Help**\n\n`;
+
+    if (isPrivate) {
+      message += `**🔐 User Commands:**
+• **/verify** - Complete group verification inline in Telegram
+• **/start** - Show welcome message and bot info\n\n`;
+    }
+
+    message += `**🛠 Group Admin Commands:**
 • **/setpolicy basic** [kick|restrict] - Require address verification only
 • **/setpolicy token** <AMOUNT> <ASSET> [kick|restrict] - Require token balance
 • **/settings** - View current group policy
@@ -948,7 +986,11 @@ Enable **"Approve new members"** in group settings.
 
 ${verifyMessage}
 
-👉 [Click here to verify](${url.toString()})`;
+**Option 1:** 🌐 Web Verification
+👉 [Click here to verify](${url.toString()})
+
+**Option 2:** 📱 Verify in Telegram
+Type /verify to complete verification right here`;
 
           await sendDM(userId, message);
           await log(chatId, 'info', 'joined', userId, { 
@@ -1062,7 +1104,11 @@ ${verifyMessage}
 
 ${verifyMessage}
 
-👉 [Click here to verify](${url.toString()})`;
+**Option 1:** 🌐 Web Verification
+👉 [Click here to verify](${url.toString()})
+
+**Option 2:** 📱 Verify in Telegram
+Type /verify to complete verification right here`;
 
       await sendDM(dmChatId, message);
       await log(chatId, 'info', 'joined', tgId, {});
