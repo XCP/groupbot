@@ -38,15 +38,19 @@ async function setCommands() {
   // Default commands (visible everywhere)
   const defaultCommands = [
     { command: 'start', description: 'Start the bot' },
+    { command: 'verify', description: 'Complete group verification inline' },
     { command: 'help', description: 'Show help message' }
   ];
-  
+
   // Admin commands (only visible to group admins)
   const adminCommands = [
     { command: 'start', description: 'Start the bot' },
     { command: 'help', description: 'Show help message' },
     { command: 'setpolicy', description: 'Configure group token requirements' },
-    { command: 'settings', description: 'View current group settings' }
+    { command: 'settings', description: 'View current group settings' },
+    { command: 'recheck', description: 'Check member balances' },
+    { command: 'enforce', description: 'Remove/restrict non-compliant members' },
+    { command: 'testjoin', description: 'Test the join flow' }
   ];
   
   // Set default commands
@@ -70,12 +74,19 @@ async function setCommands() {
   result = await response.json();
   console.log('Admin commands:', result.ok ? 'Set ✓' : 'Failed ✗');
   
+  // Commands for private chats (where verify is most useful)
+  const privateChatCommands = [
+    { command: 'start', description: 'Start the bot' },
+    { command: 'verify', description: 'Complete group verification inline' },
+    { command: 'help', description: 'Show help message' }
+  ];
+
   // Set commands for private chats
   response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setMyCommands`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      commands: defaultCommands,
+      commands: privateChatCommands,
       scope: { type: 'all_private_chats' }
     })
   });
