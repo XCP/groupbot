@@ -6,10 +6,11 @@ import { log } from '@/src/lib/logger';
 import { verifyConversation } from './verifyConversation';
 
 // Define session data
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface SessionData {}
 
 // Define custom context
-type MyContext = Context & SessionFlavor<SessionData> & ConversationFlavor;
+type MyContext = Context & SessionFlavor<SessionData> & ConversationFlavor<Context>;
 
 let botInstance: Bot<MyContext> | null = null;
 

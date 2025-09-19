@@ -9,10 +9,11 @@ import { generatePolicyHash } from '@/src/lib/policyHash';
 import { log } from '@/src/lib/logger';
 
 // Define session data (must match handler.ts)
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface SessionData {}
 
 // Define context type
-type MyContext = Context & SessionFlavor<SessionData> & ConversationFlavor;
+type MyContext = Context & SessionFlavor<SessionData> & ConversationFlavor<Context>;
 
 interface VerificationSession {
   chatId: string;
@@ -21,7 +22,7 @@ interface VerificationSession {
 }
 
 export async function verifyConversation(
-  conversation: Conversation<MyContext>,
+  conversation: Conversation<MyContext, MyContext>,
   ctx: MyContext
 ) {
   const userId = String(ctx.from!.id);
@@ -223,7 +224,7 @@ export async function verifyConversation(
         { parse_mode: 'Markdown' }
       );
 
-      await log(selectedRequest.chatId, 'error', 'verification_failed', userId, {
+      await log(selectedRequest.chatId, 'error', 'declined', userId, {
         reason: 'invalid_signature',
         method: 'telegram_inline'
       });
@@ -301,7 +302,7 @@ export async function verifyConversation(
       "Please try again later or use the web verification."
     );
 
-    await log(selectedRequest.chatId, 'error', 'verification_error', userId, {
+    await log(selectedRequest.chatId, 'error', 'declined', userId, {
       error: error instanceof Error ? error.message : 'Unknown error',
       method: 'telegram_inline'
     });
