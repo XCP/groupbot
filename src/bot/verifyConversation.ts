@@ -1,5 +1,5 @@
-import { Conversation, ConversationFlavor } from '@grammyjs/conversations';
-import { Context as BaseContext } from 'grammy';
+import { type Conversation, type ConversationFlavor } from '@grammyjs/conversations';
+import { type Context, type SessionFlavor } from 'grammy';
 import { db } from '@/src/db/prisma';
 import { getTelegramMessage } from '@/src/lib/messageUtils';
 import { verifyMessage } from '@/src/lib/verifier';
@@ -8,8 +8,11 @@ import { approveJoin, declineJoin } from '@/src/lib/telegram';
 import { generatePolicyHash } from '@/src/lib/policyHash';
 import { log } from '@/src/lib/logger';
 
-export type MyContext = BaseContext & ConversationFlavor;
-export type MyConversation = Conversation<MyContext>;
+// Define session data (must match handler.ts)
+interface SessionData {}
+
+// Define context type
+type MyContext = Context & SessionFlavor<SessionData> & ConversationFlavor;
 
 interface VerificationSession {
   chatId: string;
@@ -18,7 +21,7 @@ interface VerificationSession {
 }
 
 export async function verifyConversation(
-  conversation: MyConversation,
+  conversation: Conversation<MyContext>,
   ctx: MyContext
 ) {
   const userId = String(ctx.from!.id);

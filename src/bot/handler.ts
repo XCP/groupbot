@@ -1,9 +1,15 @@
-import { Bot, session } from 'grammy';
-import { conversations, createConversation } from '@grammyjs/conversations';
+import { Bot, session, Context, SessionFlavor } from 'grammy';
+import { conversations, createConversation, type ConversationFlavor } from '@grammyjs/conversations';
 import { sendDM } from '@/src/lib/telegram';
 import { getPolicyForChat } from '@/src/lib/policy';
 import { log } from '@/src/lib/logger';
-import { verifyConversation, type MyContext } from './verifyConversation';
+import { verifyConversation } from './verifyConversation';
+
+// Define session data
+interface SessionData {}
+
+// Define custom context
+type MyContext = Context & SessionFlavor<SessionData> & ConversationFlavor;
 
 let botInstance: Bot<MyContext> | null = null;
 
@@ -13,9 +19,7 @@ export function createBotHandler() {
 
     // Set up session and conversations middleware
     botInstance.use(session({
-      initial() {
-        return {};
-      },
+      initial: () => ({}),
     }));
     botInstance.use(conversations());
 
