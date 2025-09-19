@@ -104,6 +104,27 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
+    // Try with line ending variations if still failing
+    if (!verificationResult.valid && !data.message.endsWith('\n')) {
+      console.log('Trying with \\n line ending...');
+      verificationResult = await verifyMessage(
+        data.message + '\n',
+        data.signature,
+        data.address,
+        { strict: false }
+      );
+    }
+
+    if (!verificationResult.valid && !data.message.endsWith('\r\n')) {
+      console.log('Trying with \\r\\n line ending...');
+      verificationResult = await verifyMessage(
+        data.message + '\r\n',
+        data.signature,
+        data.address,
+        { strict: false }
+      );
+    }
+
     console.log('Signature verification result:', {
       valid: verificationResult.valid,
       method: verificationResult.method,

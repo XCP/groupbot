@@ -205,6 +205,14 @@ export async function verifyConversation(
   await ctx.reply("🔐 Verifying signature...");
 
   try {
+    console.log('Attempting signature verification:', {
+      address,
+      message: messageToSign,
+      messageLength: messageToSign.length,
+      signatureLength: signature.length,
+      signaturePreview: signature.substring(0, 30) + '...'
+    });
+
     // Try verification with the exact message first
     let verificationResult = await verifyMessage(
       messageToSign,
@@ -212,6 +220,12 @@ export async function verifyConversation(
       address,
       { strict: false }
     );
+
+    console.log('First verification attempt:', {
+      valid: verificationResult.valid,
+      method: verificationResult.method,
+      details: verificationResult.details
+    });
 
     // If verification fails, try with trailing space (common copy-paste issue)
     if (!verificationResult.valid) {
@@ -222,6 +236,33 @@ export async function verifyConversation(
         address,
         { strict: false }
       );
+
+      console.log('Second verification attempt (with space):', {
+        valid: verificationResult.valid,
+        method: verificationResult.method,
+        details: verificationResult.details
+      });
+    }
+
+    // Try with line ending variations if still failing
+    if (!verificationResult.valid) {
+      console.log('Trying with \\n line ending...');
+      verificationResult = await verifyMessage(
+        messageToSign + '\n',
+        signature,
+        address,
+        { strict: false }
+      );
+
+      if (!verificationResult.valid) {
+        console.log('Trying with \\r\\n line ending...');
+        verificationResult = await verifyMessage(
+          messageToSign + '\r\n',
+          signature,
+          address,
+          { strict: false }
+        );
+      }
     }
 
     if (!verificationResult.valid) {
