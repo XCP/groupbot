@@ -186,7 +186,7 @@ export async function verifyConversation(
   await ctx.reply(
     "✅ **Step 2: Sign Message**\n\n" +
     "Please sign this message with your wallet:\n\n" +
-    `\`\`\`\n${messageToSign}\n\`\`\`\n\n` +
+    `\`\`\`${messageToSign}\`\`\`\n\n` +
     "Use your wallet software to sign this exact message, then send me the signature.",
     { parse_mode: 'Markdown' }
   );
@@ -205,12 +205,24 @@ export async function verifyConversation(
   await ctx.reply("🔐 Verifying signature...");
 
   try {
-    const verificationResult = await verifyMessage(
+    // Try verification with the exact message first
+    let verificationResult = await verifyMessage(
       messageToSign,
       signature,
       address,
       { strict: false }
     );
+
+    // If verification fails, try with trailing space (common copy-paste issue)
+    if (!verificationResult.valid) {
+      console.log('First verification failed, trying with trailing space...');
+      verificationResult = await verifyMessage(
+        messageToSign + ' ',
+        signature,
+        address,
+        { strict: false }
+      );
+    }
 
     if (!verificationResult.valid) {
       await ctx.reply(

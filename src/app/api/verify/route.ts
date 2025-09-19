@@ -85,17 +85,30 @@ export const POST = async (req: NextRequest) => {
       isManual: data.manual
     });
 
-    const verificationResult = await verifyMessage(
+    // Try verification with the exact message first
+    let verificationResult = await verifyMessage(
       data.message,
       data.signature,
       data.address,
       { strict: false }
     );
 
+    // If verification fails and message doesn't already end with space, try with trailing space
+    if (!verificationResult.valid && !data.message.endsWith(' ')) {
+      console.log('First verification failed, trying with trailing space...');
+      verificationResult = await verifyMessage(
+        data.message + ' ',
+        data.signature,
+        data.address,
+        { strict: false }
+      );
+    }
+
     console.log('Signature verification result:', {
       valid: verificationResult.valid,
       method: verificationResult.method,
-      details: verificationResult.details
+      details: verificationResult.details,
+      triedWithSpace: !data.message.endsWith(' ')
     });
 
     if (!verificationResult.valid) {
