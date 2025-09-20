@@ -178,7 +178,19 @@ export const POST = async (req: NextRequest) => {
       }
     }
 
-    // 4) Persist attestation & member in a transaction
+    // 4) Check if user was previously restricted due to DM failure
+    const existingMember = await db.member.findUnique({
+      where: {
+        chatId_tgId: {
+          chatId: data.chat_id,
+          tgId: data.tg_id
+        }
+      }
+    });
+
+    const wasRestricted = existingMember?.state === 'restricted' && existingMember?.dmFailure === true;
+
+    // 5) Persist attestation & member in a transaction
     const attestationTTL = Number(process.env.ATTESTATION_TTL_DAYS ?? 90);
 
     // Use a transaction to ensure all DB operations succeed or fail together
@@ -215,7 +227,9 @@ export const POST = async (req: NextRequest) => {
           address: data.address,
           state: 'verified',
           lastCheck: new Date(),
-          policyHash: policyHash
+          policyHash: policyHash,
+          dmFailure: false,  // Clear the DM failure flag
+          restrictedAt: null  // Clear the restriction timestamp
         },
         create: {
           chatId: data.chat_id,
@@ -240,7 +254,20 @@ export const POST = async (req: NextRequest) => {
         }
       });
     });
-    
+
+    // If user was previously restricted due to DM failure, unrestrict them
+    if (wasRestricted) {
+      console.log('User was previously restricted due to DM failure, unrestricting...');
+      const { unrestrictMember } = await import('@/src/lib/telegram');
+      try {
+        await unrestrictMember(data.chat_id, data.tg_id);
+        console.log('Successfully unrestricted user');
+      } catch (error) {
+        console.error('Failed to unrestrict user:', error);
+        // Don't fail the verification if unrestrict fails - they're verified in our system
+      }
+    }
+
     // Try to approve the Telegram join request
     console.log('Attempting to approve Telegram join request...');
     const approveResult = await approveJoin(data.chat_id, data.tg_id);

@@ -997,11 +997,95 @@ ${verifyMessage}
 **Option 2:** 📱 Verify in Telegram
 Type /verify to complete verification right here`;
 
-          await sendDM(userId, message);
-          await log(chatId, 'info', 'joined', userId, { 
-            group_name: groupName,
-            method: 'manual_add'
-          });
+          try {
+            await sendDM(userId, message);
+            await log(chatId, 'info', 'joined', userId, {
+              group_name: groupName,
+              method: 'manual_add'
+            });
+          } catch (dmError) {
+            // Check if it's specifically a DM blocked error
+            if (dmError instanceof Error && dmError.message.includes('DM_BLOCKED')) {
+              console.log(`User ${userId} has DMs disabled, applying fallback restriction`);
+
+            // Import additional functions
+            const { restrictMember, sendGroupMessage } = await import('@/src/lib/telegram');
+
+            // Restrict the user immediately
+            await restrictMember(chatId, userId);
+
+            // Update member state to restricted
+            await db.member.update({
+              where: {
+                chatId_tgId: {
+                  chatId: chatId,
+                  tgId: userId
+                }
+              },
+              data: {
+                state: 'restricted',
+                restrictedAt: new Date(),
+                dmFailure: true
+              }
+            });
+
+            // Send public message in group
+            const user = update.new_chat_member.user;
+            const userName = user.first_name || 'User';
+            const mention = user.username
+              ? `@${user.username}`
+              : `[${userName}](tg://user?id=${userId})`;
+            const publicMessage = `⚠️ ${mention}, our verification bot could not message you due to your privacy settings.
+
+**To stay in this group, you must:**
+1. Start a chat with @${process.env.TELEGRAM_BOT_USERNAME || 'xcpgroupbot'}
+2. Type /verify to complete verification
+3. Complete this within **15 minutes** or you will be removed
+
+👉 [Click here to verify](${url.toString()})`;
+
+            await sendGroupMessage(chatId, publicMessage);
+
+            // Schedule removal after 15 minutes
+            setTimeout(async () => {
+              try {
+                // Check if user is still unverified
+                const memberCheck = await db.member.findUnique({
+                  where: {
+                    chatId_tgId: {
+                      chatId: chatId,
+                      tgId: userId
+                    }
+                  }
+                });
+
+                if (memberCheck && memberCheck.state !== 'verified') {
+                  const { softKick } = await import('@/src/lib/telegram');
+                  await softKick(chatId, userId);
+
+                  await db.member.update({
+                    where: { id: memberCheck.id },
+                    data: { state: 'kicked' }
+                  });
+
+                  console.log(`Removed user ${userId} from ${chatId} after DM failure timeout`);
+                }
+              } catch (error) {
+                console.error(`Failed to remove user ${userId} after timeout:`, error);
+              }
+            }, 15 * 60 * 1000); // 15 minutes
+
+            await log(chatId, 'warning', 'joined', userId, {
+              group_name: groupName,
+              method: 'manual_add',
+              dm_failure: true,
+              action: 'restricted'
+            });
+            } else {
+              // Some other error occurred, re-throw it
+              throw dmError;
+            }
+          }
         }
       } catch (error) {
         console.error(`Error handling manual add for user ${userId}:`, error);
@@ -1115,13 +1199,117 @@ ${verifyMessage}
 **Option 2:** 📱 Verify in Telegram
 Type /verify to complete verification right here`;
 
-      await sendDM(dmChatId, message);
-      await log(chatId, 'info', 'joined', tgId, {});
-      
+      try {
+        await sendDM(dmChatId, message);
+        await log(chatId, 'info', 'joined', tgId, {});
+      } catch (dmError) {
+        // Check if it's specifically a DM blocked error
+        if (dmError instanceof Error && dmError.message.includes('DM_BLOCKED')) {
+          console.log(`User ${tgId} has DMs disabled, accepting with restrictions`);
+
+          const { approveJoin, restrictMember, sendGroupMessage } = await import('@/src/lib/telegram');
+
+          // Accept the join request first
+          await approveJoin(chatId, tgId);
+
+          // Wait for them to fully join (Telegram can be slow)
+          await new Promise(resolve => setTimeout(resolve, 5000));
+
+          // Immediately restrict them
+          await restrictMember(chatId, tgId);
+
+          // Create member record with restricted state
+          await db.member.upsert({
+            where: {
+              chatId_tgId: {
+                chatId: chatId,
+                tgId: tgId
+              }
+            },
+            update: {
+              state: 'restricted',
+              restrictedAt: new Date(),
+              dmFailure: true
+            },
+            create: {
+              chatId: chatId,
+              tgId: tgId,
+              address: '', // No address yet
+              state: 'restricted',
+              restrictedAt: new Date(),
+              dmFailure: true
+            }
+          });
+
+          // Update join request status
+          await db.joinRequest.update({
+            where: { chatId_tgId: { chatId, tgId } },
+            data: {
+              status: 'approved',
+              processedAt: new Date()
+            }
+          });
+
+          // Send public message in group
+          const userName = req.from.first_name || 'User';
+          const mention = req.from.username
+            ? `@${req.from.username}`
+            : `[${userName}](tg://user?id=${tgId})`;
+          const publicMessage = `⚠️ ${mention}, our verification bot couldn't message you due to your privacy settings.
+
+**You're restricted until verified. To gain full access:**
+1. Start a chat with @${process.env.TELEGRAM_BOT_USERNAME || 'xcpgroupbot'}
+2. Type /verify to complete verification
+3. Complete this within **15 minutes** or you will be removed
+
+👉 [Click here to verify](${url.toString()})`;
+
+          await sendGroupMessage(chatId, publicMessage);
+
+          // Schedule removal after 15 minutes
+          setTimeout(async () => {
+            try {
+              // Check if user is still unverified
+              const memberCheck = await db.member.findUnique({
+                where: {
+                  chatId_tgId: {
+                    chatId: chatId,
+                    tgId: tgId
+                  }
+                }
+              });
+
+              if (memberCheck && memberCheck.state !== 'verified') {
+                const { softKick } = await import('@/src/lib/telegram');
+                await softKick(chatId, tgId);
+
+                await db.member.update({
+                  where: { id: memberCheck.id },
+                  data: { state: 'kicked' }
+                });
+
+                console.log(`Removed user ${tgId} from ${chatId} after DM failure timeout`);
+              }
+            } catch (error) {
+              console.error(`Failed to remove user ${tgId} after timeout:`, error);
+            }
+          }, 15 * 60 * 1000); // 15 minutes
+
+          await log(chatId, 'warning', 'approved', tgId, {
+            dm_failure: true,
+            action: 'restricted',
+            message: 'User has DMs disabled, approved with restrictions'
+          });
+        } else {
+          // Some other error occurred, re-throw it
+          throw dmError;
+        }
+      }
+
     } catch (error) {
       console.error('Error handling join request:', error);
-      await log(chatId, 'error', 'joined', tgId, { 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      await log(chatId, 'error', 'joined', tgId, {
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });

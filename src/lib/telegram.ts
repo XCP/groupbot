@@ -13,11 +13,31 @@ async function tgm(method: string, body: unknown) {
 }
 
 export async function sendDM(chatId: string | number, text: string) {
-  return tgm('sendMessage', { 
-    chat_id: chatId, 
-    text, 
+  try {
+    return await tgm('sendMessage', {
+      chat_id: chatId,
+      text,
+      parse_mode: 'Markdown',
+      disable_web_page_preview: true
+    });
+  } catch (error) {
+    // Re-throw with more context if it's a DM failure
+    if (error instanceof Error && error.message.includes("Forbidden: bot can't initiate conversation")) {
+      const dmError = new Error('DM_BLOCKED: User has disabled DMs from bots');
+      (dmError as any).originalError = error;
+      throw dmError;
+    }
+    throw error;
+  }
+}
+
+export async function sendGroupMessage(chatId: string | number, text: string, replyToMessageId?: number) {
+  return tgm('sendMessage', {
+    chat_id: chatId,
+    text,
     parse_mode: 'Markdown',
-    disable_web_page_preview: true 
+    disable_web_page_preview: true,
+    reply_to_message_id: replyToMessageId
   });
 }
 
@@ -55,25 +75,90 @@ export async function declineJoin(chatId: string | number, userId: string | numb
 }
 
 export async function restrictMember(chatId: string | number, userId: string | number) {
-  const perms = { 
-    can_send_messages: false, 
-    can_send_audios: false, 
-    can_send_documents: false, 
-    can_send_photos: false, 
-    can_send_videos: false, 
-    can_send_video_notes: false, 
-    can_send_voice_notes: false, 
-    can_send_polls: false, 
-    can_add_web_page_previews: false, 
-    can_change_info: false, 
-    can_invite_users: false, 
-    can_pin_messages: false 
+  const perms = {
+    can_send_messages: false,
+    can_send_audios: false,
+    can_send_documents: false,
+    can_send_photos: false,
+    can_send_videos: false,
+    can_send_video_notes: false,
+    can_send_voice_notes: false,
+    can_send_polls: false,
+    can_add_web_page_previews: false,
+    can_change_info: false,
+    can_invite_users: false,
+    can_pin_messages: false
   };
-  return tgm('restrictChatMember', { 
-    chat_id: chatId, 
-    user_id: userId, 
-    permissions: perms 
+  return tgm('restrictChatMember', {
+    chat_id: chatId,
+    user_id: userId,
+    permissions: perms
   });
+}
+
+export async function unrestrictMember(chatId: string | number, userId: string | number) {
+  try {
+    // First, get the chat to see its default permissions
+    const chat = await getChat(chatId);
+
+    // Check if chat has default permissions set (only available for groups/supergroups)
+    if (chat?.permissions) {
+      console.log('Using group default permissions for unrestrict');
+      // Use the group's default permissions
+      return tgm('restrictChatMember', {
+        chat_id: chatId,
+        user_id: userId,
+        permissions: chat.permissions
+      });
+    } else {
+      console.log('No default permissions found, using standard unrestrict');
+      // Fallback: remove all restrictions (makes them a normal member with default perms)
+      // This essentially "unrestricts" by removing their entry from the restriction list
+      return tgm('restrictChatMember', {
+        chat_id: chatId,
+        user_id: userId,
+        permissions: {
+          can_send_messages: true,
+          can_send_audios: true,
+          can_send_documents: true,
+          can_send_photos: true,
+          can_send_videos: true,
+          can_send_video_notes: true,
+          can_send_voice_notes: true,
+          can_send_polls: true,
+          can_send_other_messages: true,
+          can_add_web_page_previews: true,
+          can_change_info: false,
+          can_invite_users: false,
+          can_pin_messages: false,
+          can_manage_topics: false
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Failed to get chat permissions, using defaults:', error);
+    // If we can't get chat info, just remove restrictions with conservative defaults
+    return tgm('restrictChatMember', {
+      chat_id: chatId,
+      user_id: userId,
+      permissions: {
+        can_send_messages: true,
+        can_send_audios: true,
+        can_send_documents: true,
+        can_send_photos: true,
+        can_send_videos: true,
+        can_send_video_notes: true,
+        can_send_voice_notes: true,
+        can_send_polls: true,
+        can_send_other_messages: true,
+        can_add_web_page_previews: true,
+        can_change_info: false,
+        can_invite_users: false,
+        can_pin_messages: false,
+        can_manage_topics: false
+      }
+    });
+  }
 }
 
 export async function softKick(chatId: string | number, userId: string | number) {

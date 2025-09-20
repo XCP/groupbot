@@ -45,15 +45,17 @@ model Attestation {
 }
 
 model Member {
-  id         String    @id @default(cuid())
-  chatId     String
-  tgId       String
-  tgUsername String?   // Cached username from Telegram
-  tgName     String?   // Cached first name from Telegram
-  address    String
-  state      String    @default("verified") // "pending"|"verified"|"restricted"|"kicked"
-  lastCheck  DateTime?
-  policyHash String?   // Hash of the policy this member was verified against
+  id           String    @id @default(cuid())
+  chatId       String
+  tgId         String
+  tgUsername   String?   // Cached username from Telegram
+  tgName       String?   // Cached first name from Telegram
+  address      String
+  state        String    @default("verified") // "pending"|"verified"|"restricted"|"kicked"
+  lastCheck    DateTime?
+  policyHash   String?   // Hash of the policy this member was verified against
+  dmFailure    Boolean   @default(false) // Track if DMs failed for this user
+  restrictedAt DateTime? // Track when user was restricted due to DM failure
 
   group Group @relation(fields: [chatId], references: [chatId])
 
