@@ -24,7 +24,7 @@ export async function sendDM(chatId: string | number, text: string) {
     // Re-throw with more context if it's a DM failure
     if (error instanceof Error && error.message.includes("Forbidden: bot can't initiate conversation")) {
       const dmError = new Error('DM_BLOCKED: User has disabled DMs from bots');
-      (dmError as any).originalError = error;
+      (dmError as Error & { originalError: Error }).originalError = error;
       throw dmError;
     }
     throw error;

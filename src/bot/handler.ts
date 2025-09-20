@@ -1075,7 +1075,7 @@ Type /verify to complete verification right here`;
               }
             }, 15 * 60 * 1000); // 15 minutes
 
-            await log(chatId, 'warning', 'joined', userId, {
+            await log(chatId, 'warn', 'joined', userId, {
               group_name: groupName,
               method: 'manual_add',
               dm_failure: true,
@@ -1295,7 +1295,7 @@ Type /verify to complete verification right here`;
             }
           }, 15 * 60 * 1000); // 15 minutes
 
-          await log(chatId, 'warning', 'approved', tgId, {
+          await log(chatId, 'warn', 'approved', tgId, {
             dm_failure: true,
             action: 'restricted',
             message: 'User has DMs disabled, approved with restrictions'
