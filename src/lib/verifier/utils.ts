@@ -4,7 +4,6 @@
 
 import { sha256 } from '@noble/hashes/sha2';
 import { hmac } from '@noble/hashes/hmac';
-import * as secp256k1 from '@noble/secp256k1';
 import { AddressType } from './types';
 import { recoverPublicKeyFromSignature } from './secp-recovery';
 
@@ -152,7 +151,7 @@ export function detectAndNormalizeSignature(signature: string): {
         normalized: base64,
         valid: true
       };
-    } catch (error) {
+    } catch {
       return {
         format: 'hex',
         normalized: trimmed,
@@ -174,7 +173,7 @@ export function detectAndNormalizeSignature(signature: string): {
       normalized,
       valid: true
     };
-  } catch (error) {
+  } catch {
     return {
       format: 'unknown',
       normalized: trimmed,
@@ -234,7 +233,7 @@ export function validateSignatureFormat(signature: string): {
         issues
       };
     }
-  } catch (error) {
+  } catch {
     issues.push('Failed to decode signature');
     return {
       valid: false,
@@ -293,17 +292,6 @@ export function recoverPublicKey(
   compressed: boolean = true
 ): Uint8Array | null {
   return recoverPublicKeyFromSignature(signature, messageHash, recoveryId, compressed);
-}
-
-/**
- * Convert bytes to BigInt (helper function)
- */
-function bytesToBigInt(bytes: Uint8Array): bigint {
-  let result = 0n;
-  for (let i = 0; i < bytes.length; i++) {
-    result = (result << 8n) | BigInt(bytes[i]);
-  }
-  return result;
 }
 
 /**

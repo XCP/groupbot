@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { FathomAnalytics } from "./fathom";
@@ -19,7 +19,6 @@ export const metadata: Metadata = {
   keywords: ["Telegram bot", "token gating", "Counterparty", "XCP", "Bitcoin", "cryptocurrency", "group management"],
   authors: [{ name: "XCP Group Bot" }],
   robots: "index, follow",
-  viewport: "width=device-width, initial-scale=1",
   openGraph: {
     title: "XCP Group Bot - Token Gate Your Telegram Groups",
     description: "Token-gate your Telegram groups with Counterparty assets. Require specific token holdings or Bitcoin address verification for group membership.",
@@ -42,6 +41,11 @@ export const metadata: Metadata = {
     images: ["/images/xcp-bot-logo.png"],
   },
   metadataBase: new URL('https://telegram.xcp.io'),
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({

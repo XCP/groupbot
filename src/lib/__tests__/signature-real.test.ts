@@ -5,7 +5,7 @@
  */
 
 import { describe, it } from 'vitest';
-import { verifySignatureBip322, parseSignature, verifyMessageWithMethod } from '../signature';
+import { parseSignature, verifyMessageWithMethod } from '../signature';
 
 // Color codes for terminal output
 const GREEN = '\x1b[32m';

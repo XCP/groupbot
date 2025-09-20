@@ -34,6 +34,7 @@ export default function PolicyPage() {
         <div className="text-center mb-12">
           <div className="mb-6">
             <Link href="/">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
                 src="/images/xcp-bot.png" 
                 alt="Policy Generator"

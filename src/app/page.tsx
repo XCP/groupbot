@@ -59,6 +59,7 @@ export default function HomePage() {
             <div className="text-center max-w-4xl mx-auto">
               {/* Logo */}
               <div className="mb-8 inline-flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
                   src="/images/xcp-bot-logo.png" 
                   alt="XCP Group Bot"

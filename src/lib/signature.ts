@@ -235,64 +235,6 @@ function createToSpendTransaction(messageHash: Uint8Array, scriptPubKey: Uint8Ar
 /**
  * Create the to_sign transaction for BIP-322
  */
-function createToSignTransaction(toSpendTxId: string): Uint8Array {
-  const parts: Uint8Array[] = [];
-
-  // Version - 0
-  parts.push(writeUint32LE(0));
-
-  // Marker and flag for witness transaction
-  parts.push(new Uint8Array([0x00, 0x01]));
-
-  // Input count - 1
-  parts.push(writeCompactSize(1));
-
-  // Previous output hash (reversed)
-  const txidBytes = hex.decode(toSpendTxId);
-  const reversedTxid = new Uint8Array(32);
-  for (let i = 0; i < 32; i++) {
-    reversedTxid[i] = txidBytes[31 - i];
-  }
-  parts.push(reversedTxid);
-
-  // Previous output index - 0
-  parts.push(writeUint32LE(0));
-
-  // Script length - 0 (witness transaction)
-  parts.push(writeCompactSize(0));
-
-  // Sequence - 0
-  parts.push(writeUint32LE(0));
-
-  // Output count - 1
-  parts.push(writeCompactSize(1));
-
-  // Output: Amount - 0
-  parts.push(writeUint64LE(BigInt(0)));
-
-  // Output script: OP_RETURN
-  const opReturn = new Uint8Array([0x6a]);
-  parts.push(writeCompactSize(opReturn.length));
-  parts.push(opReturn);
-
-  // Witness data placeholder (will be filled later)
-  // For now, empty witness
-  parts.push(new Uint8Array([0x00]));
-
-  // Locktime - 0
-  parts.push(writeUint32LE(0));
-
-  const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const part of parts) {
-    result.set(part, offset);
-    offset += part.length;
-  }
-
-  return result;
-}
-
 /**
  * Create to_sign transaction for BIP-322 (without witness)
  * This creates the transaction with empty scriptSig first
@@ -796,7 +738,7 @@ async function verifyBIP137(
     console.debug('BIP-137: Match:', derivedAddress.toLowerCase() === address.toLowerCase());
 
     return derivedAddress.toLowerCase() === address.toLowerCase();
-  } catch (error) {
+  } catch {
     return false;
   }
 }

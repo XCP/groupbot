@@ -7,7 +7,7 @@
  */
 
 import { VerificationResult, VerificationOptions } from './types';
-import { validateMessage, detectAndNormalizeSignature, validateSignatureFormat } from './utils';
+import { validateMessage, detectAndNormalizeSignature } from './utils';
 
 // Spec-compliant verifiers
 import { verifyBIP322 } from './specs/bip322';

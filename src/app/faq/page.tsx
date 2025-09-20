@@ -206,6 +206,7 @@ export default function FAQPage() {
           <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center mb-6">
               <Link href="/">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/images/xcp-bot-faq.png"
                   alt="XCP Group Bot FAQ"
